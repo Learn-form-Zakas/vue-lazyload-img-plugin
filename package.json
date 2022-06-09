@@ -1,0 +1,68 @@
+{
+  "name": "vue-lazyload-img-plugin",
+  "version": "1.0.0",
+  "description": "vue插件——图片懒加载以及自动压缩(包括背景图)",
+  "files": [
+    "lib"
+  ],
+  "main": "lib/vue-lazyload-img.js",
+  "scripts": {
+    "test": "jest --env node",
+    "test:dev": "jest --env node --watch",
+    "clean": "del-cli lib",
+    "build": "rollup -c scripts/rollup.config.js",
+    "prepublish": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Learn-form-Zakas/vue-lazyload-img-plugin"
+  },
+  "keywords": [
+    "vue",
+    "lazyload",
+    "img",
+    "webpack",
+    "oss",
+    "plugin",
+    "x-oss-process"
+  ],
+  "author": "https://github.com/1uokun",
+  "homepage": "https://github.com/Learn-form-Zakas/vue-lazyload-img-plugin#readme",
+  "devDependencies2": {
+    "@babel/cli": "^7.7.0",
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "@babel/preset-typescript": "^7.7.4",
+    "@testing-library/jest-dom": "^4.2.3",
+    "@types/jest": "^24.0.19",
+    "@types/memory-fs": "^0.3.2",
+    "@types/webpack": "^4.39.5",
+    "@vue/eslint-config-standard": "^5.1.2",
+    "babel-jest": "^24.9.0",
+    "babel-plugin-add-module-exports": "^1.0.2",
+    "del-cli": "^3.0.0",
+    "eslint": "^8.11.0",
+    "eslint-plugin-standard": "^4.0.0",
+    "jest": "^24.9.0",
+    "jsdom": "^15.2.0",
+    "memory-fs": "^0.5.0",
+    "vue": "^2.6.10",
+    "vue-loader": "^15.7.1",
+    "vue-template-compiler": "^2.6.10",
+    "webpack": "^4.41.2"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.2.3",
+    "jquery": "^1.12",
+    "rollup": "^1.31.0",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-babel-minify": "^9.1.1",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-json": "^3.1.0",
+    "rollup-plugin-node-resolve": "^4.0.0"
+  },
+  "dependencies": {
+    "babel-plugin-add-module-exports": "^1.0.4",
+    "webpack-inject-plugin": "^1.5.5"
+  }
+}
