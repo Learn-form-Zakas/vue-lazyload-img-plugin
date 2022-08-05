@@ -1,5 +1,5 @@
 function rewrite(options, node, attr) {
-  const { attrsList, attrsMap, rawAttrsMap } = node;
+  const { attrsList = [], attrsMap = {}, rawAttrsMap = {} } = node;
 
   if (
     Array.isArray(options.alias) &&
@@ -12,10 +12,10 @@ function rewrite(options, node, attr) {
 
   node.attrsList = attrsList.map((a) => {
     if (a.name === attr) {
-      a.name = `data-dxylazyload-${attr}`;
+      a.name = `data-${attr}`;
     }
     if (a.name === `:${attr}`) {
-      a.name = `:data-dxylazyload-${attr}`;
+      a.name = `:data-${attr}`;
 
       if (attr === "style") {
         a.value = `JSON.stringify(${a.value})`;
@@ -27,18 +27,22 @@ function rewrite(options, node, attr) {
 
   Object.keys(attrsMap).forEach((a) => {
     if (a === attr) {
-      node.attrsMap[attr === "style" ? "dataStyle" : "dataSrc"] = attrsMap[a];
+      node.attrsMap[`data-${attr}`] = attrsMap[a];
       delete node.attrsMap[attr];
     }
     if (a === `:${attr}`) {
-      node.attrsMap[`:data-dxylazyload-${attr}`] = attrsMap[a];
+      node.attrsMap[`:data-${attr}`] = attrsMap[a];
       delete node.attrsMap[`:${attr}`];
     }
   });
 
   Object.keys(rawAttrsMap).forEach((a) => {
+    if (a === `${attr}`) {
+      node.rawAttrsMap[`data-${attr}`] = rawAttrsMap[a];
+      delete node.rawAttrsMap[`${attr}`];
+    }
     if (a === `:${attr}`) {
-      node.rawAttrsMap[`:data-dxylazyload-${attr}`] = rawAttrsMap[a];
+      node.rawAttrsMap[`:data-${attr}`] = rawAttrsMap[a];
       delete node.rawAttrsMap[`:${attr}`];
     }
   });
@@ -59,7 +63,7 @@ function rewriteHTML(options, node, attr) {
 
   node.attrsList = attrsList.map((a) => {
     if (a.name === attr) {
-      a.name = `:data-dxy-html`;
+      a.name = `:data-html`;
     }
 
     return a;
@@ -67,7 +71,7 @@ function rewriteHTML(options, node, attr) {
 
   Object.keys(rawAttrsMap).forEach((a) => {
     if (a === attr) {
-      node.rawAttrsMap[`:data-dxy-html`] = rawAttrsMap[a];
+      node.rawAttrsMap[`:data-html`] = rawAttrsMap[a];
       delete node.rawAttrsMap[attr];
     }
   });
@@ -79,21 +83,22 @@ function rewriteHTML(options, node, attr) {
  * 重写老代码的<img src>和 <tag style="backgroundImage">
  * * */
 function rewriteImgDataSrcAttrs(options, node) {
-  // 新增v-no-complie禁止任何编译期间的操作
-  if (node.attrsList.filter((a) => a.name === "v-no-complie").length) {
+  // 新增v-no-compile禁止任何编译期间的操作
+  if (node.attrsList.filter((a) => a.name === "v-no-compile").length) {
     return node;
   }
 
   if (node.attrsList.filter((a) => a.name === "v-html").length) {
-    return rewriteHTML(options, node, "v-html");
+    node = rewriteHTML(options, node, "v-html");
   }
 
   if (node.attrsList.filter((a) => a.name === ":style").length) {
-    return rewrite(options, node, "style");
+    node = rewrite(options, node, "style");
   }
 
   if (node.tag === "img") {
-    return rewrite(options, node, "src");
+    node = rewrite(options, node, "src");
+    node = rewrite(options, node, "alt");
   }
 
   return node;

@@ -1,11 +1,19 @@
 <!-- prettier-ignore -->
 # vue-lazuload-img-plugin
 
-vue 插件——图片懒加载以及自动压缩（包括背景图）
+vue loader 插件 —— 图片懒加载以及自动压缩（包括背景图）
+
+压缩技术支持来自 —— [《阿里云 oss-图片高级压缩》](https://help.aliyun.com/document_detail/135444.html)
 
 <img src="https://github.com/Learn-form-Zakas/vue-lazyload-img-plugin/blob/master/xmind/前端性能优化-图片.png"/>
 
-# 第一步 vue.config.js
+```bash
+npm i vue-lazyload-img-plugin
+```
+
+# 1. Vue 项目使用步骤
+
+## 第一步 vue.config.js
 
 > 原理：利用 loader 将`<img src>`修改为`<img src='{thumbnail src}' data-src='{origin src}'>`
 
@@ -21,7 +29,7 @@ chainWebpack(config) {
 }
 ```
 
-## 如果没有`vue.config.js`而是用的`webpack.config.js`
+### 如果没有`vue.config.js`而是用的`webpack.config.js`
 
 ```js
 // webpack config
@@ -49,13 +57,15 @@ const lazyloadImgWebpackLoader =
 }
 ```
 
-## config options
+### config options
 
 | 属性  | 描述             | 默认值 |
 | ----- | ---------------- | ------ |
 | alias | 图片路径资源别名 | []     |
 
-# 第二步 Vue.use(plugin)
+---
+
+## 第二步 Vue.use(plugin)
 
 > 原理：利用 plugin 在 vue 组件的 beforeCreate 阶段监听 img dom 的生成和可视区域监听
 > 当 img 可视时，再将 origin 资源加载到当前 img 上
@@ -65,20 +75,23 @@ const lazyloadImgWebpackLoader =
 ```js
 import { LazyLoadImgPlugin } from "vue-lazyload-img-plugin";
 
-Vue.use(LazyLoadImgPlugin, pluginOptions); // options见目录#PluginOptions
+Vue.use(LazyLoadImgPlugin, pluginOptions); // options见目录#plugin options
 ```
 
-# PluginOptions
+### plugin options
 
-| 属性          | 描述                                                                                                        | 默认值                                                                           |
-| ------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| host          | **正则**匹配需要被应用的图床服务器                                                                          |                                                                                  |
-| test          | **正则**匹配需要被引用的图片类型                                                                            | `.jpg\|.jpeg\|.png`                                                              |
-| x-oss-process | 图片压缩 query 参数，参考[《阿里云 oss-图片高级压缩》](https://help.aliyun.com/document_detail/135444.html) | `image/format,webp`；<br /> 不支持 webp 时为`image/resize`<br />设值后将全部覆盖 |
+| 属性    | 描述                               | 默认值              |
+| ------- | ---------------------------------- | ------------------- |
+| host    | **正则**匹配需要被应用的图床服务器 | 无，需必填          |
+| test    | **正则**匹配需要被引用的图片类型   | `.jpg\|.jpeg\|.png` |
+| maxSize | 接受压缩的最大图片尺寸             | 16383               |
+| minSize | 接受压缩的最小图片尺寸             | 64                  |
+
+> `maxSize`说明: Maximum width and height allowed is 16383 pixels for converting webp.
 
 ---
 
-# 3. html 标签属性补充
+# 2. html 标签属性补充
 
 > 可在 html 标签内添加额外配置属性
 

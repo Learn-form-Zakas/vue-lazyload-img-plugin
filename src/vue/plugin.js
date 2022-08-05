@@ -5,13 +5,16 @@ MyPlugin.install = function (Vue, options) {
   Vue.mixin({
     mounted() {
       this.$nextTick(() => {
-        LazyLoad(this.$el, options);
+        this.$__vueLazyloadImg = LazyLoad(this.$el, options);
       });
     },
     updated() {
       this.$nextTick(() => {
-        LazyLoad(this.$el, options);
+        this.$__vueLazyloadImg = LazyLoad(this.$el, options);
       });
+    },
+    destroyed() {
+      this.$__vueLazyloadImg.destroy();
     },
   });
 };
