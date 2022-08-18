@@ -1,11 +1,26 @@
 <!-- prettier-ignore -->
 # vue-lazuload-img-plugin
 
-vue loader 插件 —— 图片懒加载以及自动压缩（包括背景图）
+vue loader 插件 —— 图片懒加载以及自动压缩（包括背景图、富文本）
+
+> 🌟🌟🌟 **老项目优化利器， 无需动任何业务代码** 🌟🌟🌟，如`src`批量改成`data-src`之类的操作，
+> <br />webpack 引入本插件即可实现全局图片性能优化，具体操作详见下文
 
 压缩技术支持来自 —— [《阿里云 oss-图片高级压缩》](https://help.aliyun.com/document_detail/135444.html)
 
+1.  **有设置固定宽高时**`（如 <img width="200" /> ）`
+
+    判断 图片过小时`minSize=64`不压缩，如 icon 图标
+    <br />判断 图片过大时`maxSize=16393`不压缩，oss 不支持压缩高/宽超过 16383px
+
+2.  **未设置固定高宽时**`（利用图片自身natural高宽占位渲染，常见于富文本）`
+
+    先 **渐进式加载**（1%质量图`q_1` ） 以获取占位宽高，并添加 `onload` 事件
+    <br /> 在 `onload` 事件中继续执行上述**【操作 1 】**
+
 <img src="https://github.com/Learn-form-Zakas/vue-lazyload-img-plugin/blob/master/xmind/前端性能优化-图片.png"/>
+
+## Install <a href="https://npmjs.org/package/vue-lazyload-img-plugin"><img alt="npm version" src="http://img.shields.io/npm/v/vue-lazyload-img-plugin.svg?style=flat-square"></a> <a href="https://npmjs.org/package/vue-lazyload-img-plugin"><img alt="npm dm" src="http://img.shields.io/npm/dm/vue-lazyload-img-plugin.svg?style=flat-square"></a>
 
 ```bash
 npm i vue-lazyload-img-plugin
@@ -13,7 +28,7 @@ npm i vue-lazyload-img-plugin
 
 # 1. Vue 项目使用步骤
 
-## 第一步 vue.config.js
+## 第一步 vue.config.js 配置
 
 > 原理：利用 loader 将`<img src>`修改为`<img src='{thumbnail src}' data-src='{origin src}'>`
 
@@ -29,7 +44,7 @@ chainWebpack(config) {
 }
 ```
 
-### 如果没有`vue.config.js`而是用的`webpack.config.js`
+### 如果没有`vue.config.js`而是用的`webpack.config.js`配置
 
 ```js
 // webpack config
@@ -65,7 +80,7 @@ const lazyloadImgWebpackLoader =
 
 ---
 
-## 第二步 Vue.use(plugin)
+## 第二步 Vue.use(plugin) 安装插件
 
 > 原理：利用 plugin 在 vue 组件的 beforeCreate 阶段监听 img dom 的生成和可视区域监听
 > 当 img 可视时，再将 origin 资源加载到当前 img 上
