@@ -38,6 +38,7 @@ export function support_format_webp() {
 const defaults = {
   // attribute
   src: "data-src",
+  originSrc: "data-origin-src",
   alt: "data-alt",
   style: "data-style",
   unlazy: "v-no-lazyload",
@@ -69,7 +70,7 @@ function LazyLoad(images, options) {
 }
 
 LazyLoad.prototype = {
-  init(currentNode) {
+  init(currentNode, { unlazy } = {}) {
     const self = this;
 
     /* Without observers load everything and bail out early. */
@@ -100,15 +101,19 @@ LazyLoad.prototype = {
 
     Array.prototype.forEach.call(currentNode || this.images, function (image) {
       // 新增禁止懒加载属性
-      if (image.hasAttribute(self.settings.unlazy)) {
+      if (unlazy || image.hasAttribute(self.settings.unlazy)) {
         self.loadElements(image);
       } else if (
-        image.hasAttribute(self.settings.src) ||
         image.hasAttribute(self.settings.alt) ||
-        image.hasAttribute(self.settings.style) ||
-        image.hasAttribute(self.settings.html)
+        image.hasAttribute(self.settings.style)
       ) {
         self.observer.observe(image);
+      }
+      // 不参与懒加载的元素
+      if (image.hasAttribute(self.settings.html)) {
+        self.loadHTML(image);
+      } else if (image.hasAttribute(self.settings.src)) {
+        self.loadImagesPlaceholder(image);
       }
     });
   },
@@ -129,12 +134,16 @@ LazyLoad.prototype = {
     if (selector.hasAttribute(self.settings.unlazy)) {
       self.loadElements(selector);
     } else if (
-      selector.hasAttribute(self.settings.src) ||
       selector.hasAttribute(self.settings.alt) ||
-      selector.hasAttribute(self.settings.style) ||
-      selector.hasAttribute(self.settings.html)
+      selector.hasAttribute(self.settings.style)
     ) {
       self.observer.observe(selector);
+    }
+    // 不参与懒加载的元素
+    if (selector.hasAttribute(self.settings.html)) {
+      self.loadHTML(selector);
+    } else if (selector.hasAttribute(self.settings.src)) {
+      self.loadImagesPlaceholder(selector);
     }
   },
 
@@ -154,6 +163,54 @@ LazyLoad.prototype = {
     }
   },
 
+  // 占位符 - 先加载最低尺寸图片占位
+  loadImagesPlaceholder(node) {
+    if (!this.settings) {
+      return;
+    }
+
+    const self = this;
+    const src = node.getAttribute(self.settings.src);
+
+    if (src && !node.getAttribute(self.settings.originSrc)) {
+      // 源地址需要被保存（常用于富文本点击图片查看大图）
+      node.setAttribute(self.settings.originSrc, src);
+
+      if (
+        !IntersectionObserver ||
+        node.hasAttribute(self.settings.compress) || // 新增禁止压缩属性
+        !httpRegExp(self.settings).test(src) // host不符合webp图片压缩
+      ) {
+        node.removeAttribute(self.settings.src);
+        node.src = src;
+        return;
+      }
+
+      // 有占位就不需要加载最低尺寸图片
+      const hasSize = Math.max(node.offsetWidth, node.offsetHeight) > 0;
+      if (hasSize) {
+        self.observer.observe(node);
+      } else {
+        // 渐进式加载：先加载质量为1%的最低像素图
+        // 只有当图片未设高宽时，才利用渐进式加载获取占位尺寸
+        node.src = `${src}${self.getXOSSProcessQuality()}`;
+        node.onload = function () {
+          node.onload = undefined;
+          node.onerror = undefined;
+          self.observer.observe(node);
+        };
+        // oss服务器挂掉兜底
+        node.onerror = function () {
+          node.onload = undefined;
+          node.onerror = undefined;
+          self.observer.observe(node);
+        };
+      }
+    } else if (src) {
+      self.observer.observe(node);
+    }
+  },
+
   loadImages(node) {
     if (!this.settings) {
       return;
@@ -166,44 +223,39 @@ LazyLoad.prototype = {
       node.removeAttribute(self.settings.src);
       self.observer.unobserve(node);
 
+      if (!node.getAttribute(self.settings.originSrc)) {
+        node.setAttribute(self.settings.originSrc, src);
+      }
+
       // 新增禁止压缩属性
-      if (!IntersectionObserver || node.hasAttribute(self.settings.compress)) {
+      if (
+        !IntersectionObserver ||
+        node.hasAttribute(self.settings.compress) ||
+        !httpRegExp(self.settings).test(src)
+      ) {
         node.src = src;
         return;
       }
 
       // webp图片压缩
-      if (httpRegExp(self.settings).test(src)) {
-        const hasSize = Math.max(node.offsetWidth, node.offsetHeight) > 0;
-
-        if (hasSize) {
-          node.src = `${src}${self.getXOSSProcess(
-            node.offsetWidth,
-            node.offsetHeight
-          )}`;
-        } else {
-          // 渐进式加载：先加载质量为1%的最低像素图
-          // 只有当图片未设高宽时，才利用渐进式加载获取占位尺寸
-          node.src = `${src}${self.getXOSSProcess(0, 0, 1)}`;
-          node.onload = function () {
-            node.onload = undefined;
-            // fix: Maximum width and height allowed is 16383 pixels for converting webp.
-            if (
-              node.naturalWidth > self.settings.maxSize ||
-              node.naturalHeight > self.settings.maxSize
-            ) {
-              node.src = src;
-            } else {
-              // 继续webp压缩
-              node.src = node.src.replace(
-                self.getXOSSProcess(0, 0, 1),
-                self.getXOSSProcess(node.offsetWidth, node.offsetHeight)
-              );
-            }
-          };
-        }
+      const hasSize = Math.max(node.offsetWidth, node.offsetHeight) > 0;
+      if (hasSize) {
+        node.src = `${src}${self.getXOSSProcess(node)}`;
       } else {
-        node.src = src;
+        // 渐进式加载：先加载质量为1%的最低像素图
+        // 只有当图片未设高宽时，才利用渐进式加载获取占位尺寸
+        node.src = `${src}${self.getXOSSProcessQuality()}`;
+        node.onload = function () {
+          node.onload = undefined;
+          node.onerror = undefined;
+          // 继续webp压缩
+          node.src = `${src}${self.getXOSSProcess(node)}`;
+        };
+        node.onerror = function () {
+          node.onload = undefined;
+          node.onerror = undefined;
+          node.src = src;
+        };
       }
     }
   },
@@ -245,7 +297,10 @@ LazyLoad.prototype = {
         const { width, height } = node.getBoundingClientRect();
         node.style[a] = styleStr.replace(
           backgroundRegExp(self.settings),
-          `url($1${self.getXOSSProcess(width, height)})`
+          `url($1${self.getXOSSProcess({
+            offsetHeight: height,
+            offsetWidth: width,
+          })})`
         );
       } else {
         node.style[a] = styleStr;
@@ -280,26 +335,33 @@ LazyLoad.prototype = {
       .replace(/\n/g, "")
       .replace(srcReplaceRegExp, `$1${self.settings.src}=$3`)
       .replace(altReplaceRegExp, `$1${self.settings.alt}=$3`);
-    // .replace(backgroundRegExp(self.settings), `url($1${self.getXOSSProcess()})`);
 
-    self.init(node.querySelectorAll("*"));
+    self.init(node.querySelectorAll("*"), {
+      unlazy: node.hasAttribute(self.settings.unlazy),
+    });
   },
 
   /**
    * x-oss-process query计算函数
+   * @param {Object:{offsetHeight,offsetWidth}} node
    * 文档：https://help.aliyun.com/document_detail/135444.html
    * * */
-  getXOSSProcess(width, height, quality) {
-    // 仅质量转换
-    if (quality) {
-      return `?x-oss-process=image/auto-orient,1/quality,q_${quality}/format,jpg`;
-    }
-
+  getXOSSProcess(node) {
     let size = "";
+    const width = node.offsetWidth;
+    const height = node.offsetHeight;
     // 判断初始图片为auto还是有固定值
     if (width > 0 || height > 0) {
       // 图片过小时不压缩，如icon图标
       if (width < this.settings.minSize && height < this.settings.minSize) {
+        return "";
+      }
+
+      // fix: Maximum width and height allowed is 16383 pixels for converting webp.
+      if (
+        node.naturalWidth > this.settings.maxSize ||
+        node.naturalHeight > this.settings.maxSize
+      ) {
         return "";
       }
 
@@ -324,6 +386,11 @@ LazyLoad.prototype = {
     }
 
     return "";
+  },
+
+  // 仅质量转换
+  getXOSSProcessQuality() {
+    return "?x-oss-process=image/auto-orient,1/quality,q_1/format,jpg";
   },
 
   /**

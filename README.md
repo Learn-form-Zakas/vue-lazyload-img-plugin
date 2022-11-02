@@ -98,7 +98,7 @@ Vue.use(LazyLoadImgPlugin, pluginOptions); // options见目录#plugin options
 | 属性    | 描述                               | 默认值              |
 | ------- | ---------------------------------- | ------------------- |
 | host    | **正则**匹配需要被应用的图床服务器 | 无，需必填          |
-| test    | **正则**匹配需要被引用的图片类型   | `.jpg\|.jpeg\|.png` |
+| reg     | **正则**匹配需要被引用的图片类型   | `.jpg\|.jpeg\|.png` |
 | maxSize | 接受压缩的最大图片尺寸             | 16383               |
 | minSize | 接受压缩的最小图片尺寸             | 64                  |
 
@@ -136,10 +136,30 @@ Vue.use(LazyLoadImgPlugin, pluginOptions); // options见目录#plugin options
   src="http://image-demo.oss-cn-hangzhou.aliyuncs.com/example.jpg?x-oss-process=image/resize,p_50"
 />
 
-<!-- 富文本不接受懒加载（即富文本也默认支持了懒加载） -->
+<!-- 富文本内所有图片不接受懒加载 -->
 <div v-html="..." v-no-lazyload></div>
 <!-- 富文本内所有图片和背景图都不支持压缩 -->
 <div v-html="..." v-no-compress></div>
 <!-- 禁止本插件对富文本有任何改动 -->
 <div v-html="..." v-no-compile></div>
 ```
+
+# 3. tips
+
+1. 存在 DOM 操作时，请在`$nextTick`回调后执行
+
+   ```js
+   mounted(){
+    this.$nextTick(() => {
+      // DOM操作
+      ...
+    });
+   }
+   ```
+
+2. 图片源资源地址被存储在`data-origin-src`中
+   ```js
+   // 可从这里获取源地址
+   img.dataset.originSrc;
+   ```
+3. 为`<img/>`提前设定好高宽就可以减少一次服务器请求
