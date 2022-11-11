@@ -223,6 +223,7 @@ LazyLoad.prototype = {
       node.removeAttribute(self.settings.src);
       self.observer.unobserve(node);
 
+      // 源地址需要被保存（常用于富文本点击图片查看大图）
       if (!node.getAttribute(self.settings.originSrc)) {
         node.setAttribute(self.settings.originSrc, src);
       }
@@ -251,6 +252,7 @@ LazyLoad.prototype = {
           // 继续webp压缩
           node.src = `${src}${self.getXOSSProcess(node)}`;
         };
+        // oss服务器挂掉兜底
         node.onerror = function () {
           node.onload = undefined;
           node.onerror = undefined;
@@ -368,7 +370,7 @@ LazyLoad.prototype = {
       const w = this.getCompressRatio(width);
       const h = this.getCompressRatio(height);
 
-      size = `,${w > h ? `w_${w}` : `h_${h}`}`;
+      size = `,${w <= h ? `w_${w}` : `h_${h}`}`;
     }
 
     // 图片已占位时 —— 加载最适合像素尺寸
@@ -441,6 +443,7 @@ LazyLoad.prototype = {
     if (value <= 720) {
       return 720;
     }
+    // H5最大宽度
     return 900;
   },
 
