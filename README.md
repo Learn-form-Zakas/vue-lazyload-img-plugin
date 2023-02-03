@@ -162,4 +162,17 @@ Vue.use(LazyLoadImgPlugin, pluginOptions); // options见目录#plugin options
    // 可从这里获取源地址
    img.dataset.originSrc;
    ```
-3. 为`<img/>`提前设定好高宽就可以减少一次服务器请求
+3. 尽量做到预先指定图片的尺寸`<img width="" height="" />`
+   - 本插件可以减少一次服务器请求
+   - 可以减少重排（回流）可能造成的卡顿
+
+4. 记得开启DNS预解析
+   ```html
+    预解析CDN域名
+    <link rel="dns-prefetch" href="//img.alicdn.com">
+    
+    强制开启HTTPS下的DNS预解析
+    <meta http-equiv="x-dns-prefetch-control" content="on">
+   ```
+   
+   
