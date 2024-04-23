@@ -88,10 +88,12 @@ const lazyloadImgWebpackLoader =
 <b>`/main.js`文件</b>
 
 ```js
+import "intersection-observer" // IntersectionObserver polyfill
 import { LazyLoadImgPlugin } from "vue-lazyload-img-plugin";
 
 Vue.use(LazyLoadImgPlugin, pluginOptions); // options见目录#plugin options
 ```
+
 
 ### plugin options
 
